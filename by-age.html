@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AMH for your age</title>
+<style>
+  :root { --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --accent:#2563eb; }
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:var(--ink); margin:0; padding:24px; background:#f9fafb; }
+  .wrap { max-width:640px; margin:0 auto; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:26px 26px 20px; }
+  h1 { font-size:17px; font-weight:600; margin:0 0 18px; color:var(--muted); }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:6px; }
+  .field { display:flex; flex-direction:column; gap:5px; }
+  label { font-size:12px; font-weight:600; color:var(--muted); }
+  input, select { padding:9px 11px; border:1px solid var(--line); border-radius:10px; font-size:15px; width:110px; }
+  button { padding:10px 18px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-size:14px; font-weight:600; cursor:pointer; }
+  button:hover { background:#1d4ed8; }
+  .out { display:none; margin-top:24px; }
+  .big { font-size:26px; font-weight:700; line-height:1.25; margin:0 0 2px; }
+  .big .n { color:var(--accent); }
+  .sub { font-size:14px; color:var(--muted); margin:0 0 4px; }
+  svg { width:100%; height:auto; margin-top:10px; }
+  .note { font-size:13px; margin-top:14px; padding:11px 13px; background:#fff7ed; border:1px solid #fed7aa; border-radius:9px; color:#9a3412; display:none; }
+  .fine { font-size:11.5px; color:var(--muted); margin-top:14px; }
+</style></head>
+<body><div class="wrap"><div class="card">
+  <h1>How does your AMH compare with women your age?</h1>
+  <div class="row">
+    <div class="field"><label>Your age</label><input id="age" type="number" min="18" max="55" step="1" placeholder="26"></div>
+    <div class="field"><label>Your AMH (ng/mL)</label><input id="amh" type="number" min="0" step="0.01" placeholder="3.2"></div>
+    <div class="field"><label>PCOS?</label><select id="pcos"><option value="no">No</option><option value="maybe">Not sure</option><option value="yes">Yes</option></select></div>
+    <button onclick="run()">See where I land</button>
+  </div>
+  <div class="out" id="out">
+    <p class="big" id="big"></p><p class="sub" id="sub"></p>
+    <svg id="chart" viewBox="0 0 620 300" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="note" id="note"></div><p class="fine" id="fine"></p>
+  </div>
+</div></div>
+<script>
+const P={"slope": -0.01936291631632735, "intercept": 1.7444735917364436, "sd": 0.8805674577785553, "ageMin": 20.0, "ageMax": 48.0}, REF=[[28.0, 2.07], [36.0, 1.53], [37.0, 1.22], [25.0, 2.26], [36.0, 6.74], [34.0, 3.05], [33.0, 1.54], [32.0, 1.0], [36.0, 1.61], [20.0, 4.47], [26.0, 1.67], [38.0, 2.38], [34.0, 0.88], [38.0, 0.69], [29.0, 3.78], [36.0, 1.92], [31.0, 1.0], [25.0, 2.85], [38.0, 2.13], [34.0, 4.13], [28.0, 2.5], [41.0, 0.26], [20.0, 2.5], [25.0, 3.56], [32.0, 1.69], [31.0, 2.34], [38.0, 1.58], [28.0, 2.36], [32.0, 3.64], [37.0, 2.78], [26.0, 0.88], [36.0, 2.36], [20.0, 0.33], [32.0, 2.35], [29.0, 3.88], [28.0, 3.55], [24.0, 4.33], [25.0, 2.36], [26.0, 4.33], [34.0, 1.0], [23.0, 2.1], [32.0, 6.55], [32.0, 1.2], [37.0, 2.33], [38.0, 3.22], [36.0, 2.333], [26.0, 2.31], [26.0, 2.36], [29.0, 4.2], [24.0, 2.14], [29.0, 2.3], [27.0, 4.6], [32.0, 2.3], [41.0, 5.8], [35.0, 5.2], [33.0, 1.01], [29.0, 2.58], [36.0, 5.8], [26.0, 0.35], [35.0, 5.23], [36.0, 3.68], [34.0, 2.55], [37.0, 4.91], [38.0, 1.03], [36.0, 6.56], [34.0, 3.91], [39.0, 5.42], [35.0, 1.65], [34.0, 2.06], [27.0, 1.81], [31.0, 3.81], [40.0, 2.26], [36.0, 8.98], [44.0, 1.7], [35.0, 3.18], [28.0, 2.75], [32.0, 0.86], [27.0, 2.29], [32.0, 1.04], [32.0, 4.27], [30.0, 3.86], [34.0, 1.42], [34.0, 0.98], [29.0, 4.07], [28.0, 3.9], [34.0, 17.0], [26.0, 1.6], [39.0, 3.3], [29.0, 1.8], [35.0, 3.6], [33.0, 5.0], [29.0, 3.3], [30.0, 3.3], [33.0, 3.9], [38.0, 2.4], [40.0, 4.5], [42.0, 5.14], [41.0, 2.4], [40.0, 0.3], [25.0, 19.3], [35.0, 4.3], [30.0, 1.4], [26.0, 12.6], [35.0, 4.8], [27.0, 4.6], [35.0, 17.1], [36.0, 2.1], [32.0, 1.8], [37.0, 9.9], [35.0, 3.7], [36.0, 2.9], [28.0, 2.0], [24.0, 1.6], [26.0, 7.02], [26.0, 8.75], [27.0, 5.27], [34.0, 1.4], [32.0, 3.56], [36.0, 3.41], [38.0, 0.45], [32.0, 0.29], [35.0, 2.6], [32.0, 2.83], [29.0, 1.89], [28.0, 1.68], [31.0, 3.63], [37.0, 2.01], [35.0, 2.36], [30.0, 3.38], [42.0, 1.35], [36.0, 2.38], [26.0, 5.78], [27.0, 4.66], [43.0, 1.28], [28.0, 3.99], [34.0, 7.81], [30.0, 5.76], [30.0, 1.68], [29.0, 8.75], [28.0, 1.86], [32.0, 2.04], [30.0, 1.04], [28.0, 1.91], [28.0, 2.3], [30.0, 3.02], [32.0, 7.0], [27.0, 3.17], [27.0, 16.9], [29.0, 5.96], [41.0, 9.1], [26.0, 1.9], [27.0, 4.3], [39.0, 0.37], [30.0, 7.8], [36.0, 2.9], [32.0, 7.7], [35.0, 9.7], [31.0, 2.5], [28.0, 12.0], [22.0, 16.7], [31.0, 16.8], [27.0, 3.5], [28.0, 1.3], [33.0, 3.14], [32.0, 7.7], [20.0, 7.3], [23.0, 3.29], [37.0, 2.69], [26.0, 14.6], [29.0, 1.0], [30.0, 1.9], [36.0, 1.9], [28.0, 1.5], [36.0, 2.9], [33.0, 2.25], [27.0, 6.8], [43.0, 0.8], [38.0, 4.2], [32.0, 6.2], [38.0, 0.9], [37.0, 16.8], [34.0, 16.9], [40.0, 8.5], [25.0, 3.9], [30.0, 4.1], [26.0, 3.2], [43.0, 0.16], [30.0, 8.1], [30.0, 0.56], [31.0, 0.9], [31.0, 15.3], [32.0, 4.2], [32.0, 4.7], [38.0, 4.8], [26.0, 1.7], [35.0, 1.2], [27.0, 5.4], [35.0, 6.0], [30.0, 2.0], [31.0, 10.8], [20.0, 4.5], [34.0, 4.2], [26.0, 1.2], [28.0, 10.0], [26.0, 18.7], [35.0, 0.28], [24.0, 3.02], [39.0, 3.0], [38.0, 3.05], [28.0, 3.02], [30.0, 2.23], [28.0, 2.06], [47.0, 3.33], [32.0, 1.0], [38.0, 11.0], [28.0, 3.6], [40.0, 1.03], [35.0, 6.33], [45.0, 2.5], [31.0, 2.2], [29.0, 3.5], [33.0, 1.1], [29.0, 1.3], [27.0, 3.0], [31.0, 3.0], [30.0, 2.17], [30.0, 3.3], [29.0, 9.1], [25.0, 2.31], [36.0, 3.6], [30.0, 2.8], [31.0, 1.5], [32.0, 4.6], [30.0, 5.0], [22.0, 3.9], [30.0, 3.5], [33.0, 10.7], [28.0, 4.8], [32.0, 2.6], [34.0, 3.9], [36.0, 3.09], [34.0, 10.9], [35.0, 5.2], [42.0, 1.6], [31.0, 1.0], [35.0, 6.4], [38.0, 2.8], [20.0, 2.19], [35.0, 2.5], [31.0, 5.1], [28.0, 5.8], [32.0, 0.2], [35.0, 1.2], [28.0, 9.1], [23.0, 2.9], [31.0, 3.1], [37.0, 5.6], [35.0, 7.9], [29.0, 18.9], [32.0, 11.4], [37.0, 3.8], [41.0, 4.5], [40.0, 2.0], [31.0, 3.1], [23.0, 2.9], [35.0, 1.2], [32.0, 0.2], [28.0, 5.8], [31.0, 5.1], [35.0, 2.5], [30.0, 1.9], [27.0, 1.14], [28.0, 5.7], [26.0, 3.8], [33.0, 4.2], [33.0, 0.5], [36.0, 0.9], [45.0, 4.8], [40.0, 1.3], [34.0, 6.4], [40.0, 8.1], [26.0, 5.2], [26.0, 3.4], [32.0, 2.28], [36.0, 4.8], [40.0, 6.9], [42.0, 12.8], [29.0, 2.7], [33.0, 0.84], [42.0, 1.2], [29.0, 2.8], [33.0, 10.3], [30.0, 2.5], [29.0, 3.6], [26.0, 11.0], [31.0, 0.6], [40.0, 0.5], [29.0, 5.96], [41.0, 9.1], [36.0, 5.0], [27.0, 7.0], [33.0, 9.0], [41.0, 10.0], [33.0, 6.0], [35.0, 6.0], [40.0, 16.0], [39.0, 4.13], [48.0, 4.02], [32.0, 0.71], [28.0, 0.89], [27.0, 1.97], [26.0, 1.4], [44.0, 3.03], [32.0, 3.86], [31.0, 6.26], [30.0, 0.72], [36.0, 10.32], [36.0, 2.39], [35.0, 1.1], [23.0, 4.9], [25.0, 10.6], [30.0, 5.1], [34.0, 7.9], [35.0, 3.1], [23.0, 5.1], [28.0, 11.2], [40.0, 1.7], [38.0, 5.2], [38.0, 2.2], [31.0, 1.3], [33.0, 12.0], [35.0, 3.3], [35.0, 1.7], [37.0, 0.9], [36.0, 4.9], [24.0, 17.6], [44.0, 4.6], [21.0, 2.2], [32.0, 18.9], [31.0, 10.0], [34.0, 16.0], [27.0, 5.4], [24.0, 3.7], [28.0, 5.5], [40.0, 2.5], [29.0, 18.5], [27.0, 0.6], [32.0, 2.5], [22.0, 3.7], [41.0, 0.8], [32.0, 2.3], [38.0, 1.0], [34.0, 0.7], [39.0, 6.3], [24.0, 18.2], [26.0, 7.6], [35.0, 1.7], [30.0, 5.6], [36.0, 3.7], [27.0, 5.2]];
+function erf(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+0.3275911*x);const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y;}
+const normCDF=z=>0.5*(1+erf(z/Math.SQRT2));
+function normPPF(p){const a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00],b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01],c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00],d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00],pl=0.02425,ph=1-pl;let q,r;if(p<pl){q=Math.sqrt(-2*Math.log(p));return(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}if(p<=ph){q=p-.5;r=q*q;return(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}q=Math.sqrt(-2*Math.log(1-p));return-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+const model=a=>P.slope*a+P.intercept;
+const bandVal=(a,p)=>Math.exp(model(a)+normPPF(p/100)*P.sd);
+const pctOf=(a,m)=>100*normCDF((Math.log(m)-model(a))/P.sd);
+const dens=(a,x)=>x<=0?0:(1/(x*P.sd*Math.sqrt(2*Math.PI)))*Math.exp(-Math.pow(Math.log(x)-model(a),2)/(2*P.sd*P.sd));
+function run(){
+  const age=parseFloat(age_.value), amh=parseFloat(amh_.value), pcos=pcos_.value;
+  if(!(age>0)||!(amh>0)){alert('Enter a valid age and AMH.');return;}
+  const pct=Math.round(pctOf(age,amh)), below=Math.max(0,Math.min(100,pct));
+  out.style.display='block';
+  let word = pct<10?'lower than most':(pct>90?'higher than most':'right in line with');
+  big.innerHTML=`Your AMH is <span class="n">${word}</span> women your age.`;
+  sub.textContent=`Among 100 women aged ${age}, about ${below} have less AMH than you and ${100-below} have more.`;
+  const lo=bandVal(age,10).toFixed(1), hi=bandVal(age,90).toFixed(1);
+  fine.textContent=`Typical range for age ${age}: ${lo}–${hi} ng/mL. AMH varies a lot between women the same age, so this shows a broad position, not a precise score. Values also depend on the lab. Educational only — discuss with a clinician.`;
+  let notes=[];
+  if(age<P.ageMin||age>P.ageMax) notes.push(`Age ${age} is outside our reference range (${P.ageMin}–${P.ageMax}), so this is an estimate.`);
+  if(pcos==='yes') notes.push('With PCOS, a higher-than-typical AMH is expected — it does not mean higher fertility. Please review with a clinician.');
+  if(pcos==='maybe') notes.push('If PCOS is confirmed, a higher-than-typical AMH would be expected and read differently.');
+  if(notes.length){note.style.display='block';note.innerHTML=notes.join('<br><br>');}else note.style.display='none';
+  draw(age,amh);
+}
+function draw(age,amh){
+  const W=620,H=300,mL=14,mR=14,mT=14,mB=46;
+  const xMax=Math.max(bandVal(age,98),amh*1.12);
+  const sx=x=>mL+(x/xMax)*(W-mL-mR);
+  const N=160, xs=[], ys=[]; let yMax=0;
+  for(let i=0;i<=N;i++){const x=xMax*i/N;const y=dens(age,x);xs.push(x);ys.push(y);if(y>yMax)yMax=y;}
+  const sy=y=>H-mB-(y/yMax)*(H-mT-mB);
+  const NS='http://www.w3.org/2000/svg', svg=document.getElementById('chart'); svg.innerHTML='';
+  const el=(t,at)=>{const e=document.createElementNS(NS,t);for(k in at)e.setAttribute(k,at[k]);return e;};
+  let dl='M '+sx(0)+' '+sy(0);for(let i=0;i<=N;i++){ if(xs[i]<=amh) dl+=' L '+sx(xs[i])+' '+sy(ys[i]); }dl+=' L '+sx(amh)+' '+sy(0)+' Z';
+  svg.appendChild(el('path',{d:dl,fill:'#bfdbfe'}));
+  let dr='M '+sx(amh)+' '+sy(0);for(let i=0;i<=N;i++){ if(xs[i]>=amh) dr+=' L '+sx(xs[i])+' '+sy(ys[i]); }dr+=' L '+sx(xMax)+' '+sy(0)+' Z';
+  svg.appendChild(el('path',{d:dr,fill:'#eef2f7'}));
+  let dc='M '+sx(xs[0])+' '+sy(ys[0]);for(let i=1;i<=N;i++)dc+=' L '+sx(xs[i])+' '+sy(ys[i]);
+  svg.appendChild(el('path',{d:dc,fill:'none',stroke:'#94a3b8','stroke-width':1.5}));
+  svg.appendChild(el('line',{x1:mL,y1:H-mB,x2:W-mR,y2:H-mB,stroke:'#cbd5e1'}));
+  const step=xMax<=6?1:(xMax<=12?2:4);
+  for(let v=0;v<=xMax;v+=step){svg.appendChild(el('line',{x1:sx(v),y1:H-mB,x2:sx(v),y2:H-mB+4,stroke:'#cbd5e1'}));const t=el('text',{x:sx(v),y:H-mB+17,'text-anchor':'middle','font-size':11,fill:'#6b7280'});t.textContent=v;svg.appendChild(t);}
+  const xl=el('text',{x:(mL+W-mR)/2,y:H-6,'text-anchor':'middle','font-size':12,fill:'#374151'});xl.textContent='AMH (ng/mL) among women aged '+age;svg.appendChild(xl);
+  REF.filter(([a,m])=>Math.abs(a-age)<=2 && m<=xMax).forEach(([a,m])=>svg.appendChild(el('line',{x1:sx(m),y1:H-mB,x2:sx(m),y2:H-mB-6,stroke:'#64748b','stroke-opacity':0.4})));
+  const ux=sx(amh);
+  svg.appendChild(el('line',{x1:ux,y1:sy(0),x2:ux,y2:mT+4,stroke:'#111827','stroke-width':2}));
+  svg.appendChild(el('circle',{cx:ux,cy:sy(dens(age,amh)),r:6,fill:'#111827',stroke:'#fff','stroke-width':2}));
+  const yl=el('text',{x:ux,y:mT,'text-anchor':'middle','font-size':12,'font-weight':700,fill:'#111827'});yl.textContent='YOU';svg.appendChild(yl);
+}
+const age_=document.getElementById('age'),amh_=document.getElementById('amh'),pcos_=document.getElementById('pcos');
+const out=document.getElementById('out'),big=document.getElementById('big'),sub=document.getElementById('sub'),note=document.getElementById('note'),fine=document.getElementById('fine');
+</script></body></html>
